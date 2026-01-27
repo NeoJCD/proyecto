@@ -1,0 +1,16 @@
+# Created by venv; see https://docs.python.org/3/library/venv.html
+# --- Archivos de Python (Compilados) ---
+__pycache__/
+*.pyc
+*.pyo
+
+# --- Base de Datos (Para que no borres datos de otros) ---
+db.sqlite3
+
+# --- Entorno Virtual (¡La cocina completa!) ---
+env/
+venv/
+.env
+
+# --- VS Code (Configuraciones locales) ---
+.vscode/

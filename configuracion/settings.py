@@ -76,3 +76,22 @@ SIMPLE_JWT = {
     # ¡IMPORTANTE! Usamos tu serializer personalizado aquí
     'TOKEN_OBTAIN_SERIALIZER': 'petrolera.customtoken.CustomTokenObtainPairSerializer',
 }
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 1. ESTA ES LA LÍNEA QUE TE FALTABA (Seguridad JWT):
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    # Recuperamos tus límites de velocidad:
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'tecnicos': '10/minute',
+        'administrativos': '5/minute',
+        'seguridad': '100/minute',
+    }
+}

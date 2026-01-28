@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-clave-secreta-para-neomar'
@@ -67,24 +68,11 @@ USE_TZ = True
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        # 1. La seguridad principal (Como en el video)
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-
-        # 2. Respaldo para que puedas seguir entrando al Admin por navegador
-        'rest_framework.authentication.SessionAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
-    # ... (Mantén tus límites de velocidad 'DEFAULT_THROTTLE_RATES' igual) ...
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.ScopedRateThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'tecnicos': '10/minute',
-        'administrativos': '5/minute',
-        'seguridad': '100/minute',
-    }
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    # ¡IMPORTANTE! Usamos tu serializer personalizado aquí
+    'TOKEN_OBTAIN_SERIALIZER': 'petrolera.customtoken.CustomTokenObtainPairSerializer',
 }

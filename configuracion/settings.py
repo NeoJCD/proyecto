@@ -14,11 +14,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # TUS APPS:
     'rest_framework',
+    'rest_framework_simplejwt',
     'tareas',
     'petrolera',
 ]
 
-# --- ESTA ES LA PARTE QUE TE FALTABA ---
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -68,18 +69,22 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        # 1. La seguridad principal (Como en el video)
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+
+        # 2. Respaldo para que puedas seguir entrando al Admin por navegador
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    # ... (Mantén tus límites de velocidad 'DEFAULT_THROTTLE_RATES' igual) ...
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'tecnicos': '10/minute',        # Pueden hacer 10 consultas por minuto
-        'administrativos': '5/minute',  # Solo 5 consultas por minuto
-        'seguridad': '100/minute',      # 100 consultas (casi libre)
+        'tecnicos': '10/minute',
+        'administrativos': '5/minute',
+        'seguridad': '100/minute',
     }
 }

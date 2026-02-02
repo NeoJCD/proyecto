@@ -1,12 +1,9 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import TecnicoViewSet, AdminViewSet, SeguridadViewSet, UsuarioViewSet # <-- Importa la nueva vista
+from .views import PozoViewSet
 
 router = DefaultRouter()
-router.register(r'pozos', TecnicoViewSet)
-router.register(r'contabilidad', AdminViewSet)
-router.register(r'seguridad', SeguridadViewSet)
-router.register(r'usuarios', UsuarioViewSet) 
+router.register(r'pozos', PozoViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

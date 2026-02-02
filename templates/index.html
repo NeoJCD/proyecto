@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SGP - PDVSA Intranet</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <style>
+        :root { --pdvsa-red: #CE1126; --pdvsa-blue: #003399; }
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', system-ui, sans-serif; overflow-x: hidden; }
+        
+        /* LOGIN */
+        .login-bg { background: linear-gradient(135deg, var(--pdvsa-red) 0%, var(--pdvsa-blue) 100%); height: 100vh; width: 100%; position: fixed; z-index: 2000; top: 0; left: 0; }
+        
+        /* SIDEBAR */
+        .sidebar { min-height: 100vh; width: 260px; background: #2c3e50; color: white; position: fixed; transition: all 0.3s; z-index: 1000; }
+        .sidebar-header { padding: 20px; background: var(--pdvsa-red); text-align: center; }
+        .nav-link { color: rgba(255,255,255,0.8); padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); cursor: pointer; }
+        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; border-left: 4px solid var(--pdvsa-red); }
+        .nav-link i { margin-right: 10px; width: 20px; text-align: center; }
+        
+        /* CONTENIDO */
+        .main-content { margin-left: 260px; padding: 30px; }
+        .card-dash { border: none; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); transition: transform 0.2s; }
+        .card-dash:hover { transform: translateY(-3px); }
+        .d-none { display: none !important; }
+        
+        /* CÁMARAS */
+        .cam-feed { background: #000; height: 150px; position: relative; border-radius: 5px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .rec-dot { position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background: red; border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="vista-login" class="login-bg d-flex justify-content-center align-items-center">
+        <div class="card p-5 shadow-lg text-center" style="width: 400px; border-radius: 15px;">
+            <div class="mb-4">
+                <i class="bi bi-droplet-fill text-danger display-4"></i>
+                <h2 class="text-danger fw-bold m-0">PDVSA</h2>
+                <small class="text-muted">Acceso Corporativo SGP</small>
+            </div>
+            <div class="form-floating mb-3"><input type="text" id="input-user" class="form-control" placeholder="Usuario"><label>Usuario</label></div>
+            <div class="form-floating mb-4"><input type="password" id="input-pass" class="form-control" placeholder="Contraseña"><label>Contraseña</label></div>
+            <button onclick="login()" class="btn btn-danger w-100 py-3 fw-bold shadow">ENTRAR AL SISTEMA</button>
+            <div id="msg-error" class="text-danger mt-3 small fw-bold"></div>
+        </div>
+    </div>
+
+    <div id="vista-sistema" class="d-none">
+        
+        <div class="sidebar">
+            <div class="sidebar-header"><h4 class="fw-bold m-0"><i class="bi bi-speedometer2"></i> SGP</h4><small>Gestión Petrolera</small></div>
+            
+            <div class="p-3 text-center border-bottom border-secondary">
+                <div class="bg-white text-dark rounded-circle d-inline-block d-flex justify-content-center align-items-center mx-auto mb-2" style="width: 50px; height: 50px;">
+                    <i class="bi bi-person-fill fs-3"></i>
+                </div>
+                <h6 id="menu-user" class="m-0 fw-bold">Usuario</h6>
+                <span id="menu-cargo" class="badge bg-secondary mt-1">...</span>
+            </div>
+
+            <nav class="nav flex-column mt-3" id="menu-items"></nav>
+
+            <div class="mt-auto p-3 position-absolute bottom-0 w-100">
+                <button onclick="logout()" class="btn btn-outline-light w-100 btn-sm"><i class="bi bi-box-arrow-left"></i> Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            
+            <div id="sec-bienvenida" class="seccion-contenido text-center py-5">
+                <div class="py-5">
+                    <i class="bi bi-shield-lock display-1 text-muted opacity-25"></i>
+                    <h2 class="mt-3 text-secondary">Bienvenido al Sistema SGP</h2>
+                    <p class="lead text-muted">Seleccione una opción del menú lateral.</p>
+                </div>
+            </div>
+            
+            <div id="sec-pozos" class="seccion-contenido d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="text-dark fw-bold"><i class="bi bi-fuel-pump text-danger"></i> Gestión de Pozos</h3>
+                    <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#modalPozo"><i class="bi bi-plus-lg"></i> Nuevo Pozo</button>
+                </div>
+                <div id="grid-pozos" class="row g-4"></div>
+            </div>
+
+            <div id="sec-mantenimiento" class="seccion-contenido d-none">
+                <h3 class="fw-bold"><i class="bi bi-tools text-warning"></i> Mantenimiento</h3>
+                <div class="alert alert-light border mt-3">
+                    <h5><i class="bi bi-list-check"></i> Órdenes de Trabajo</h5>
+                    <ul class="list-group mt-2">
+                        <li class="list-group-item">Revisión Válvula Bloque 4 <span class="badge bg-warning float-end">Pendiente</span></li>
+                        <li class="list-group-item">Calibración Sensor Presión <span class="badge bg-success float-end">Listo</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="sec-camaras" class="seccion-contenido d-none">
+                <h3 class="fw-bold"><i class="bi bi-camera-video-fill text-danger"></i> CCTV Vigilancia</h3>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-4"><div class="cam-feed"><span class="rec-dot"></span><p class="text-white">CAM 01 - ACCESO</p></div></div>
+                    <div class="col-md-4"><div class="cam-feed"><span class="rec-dot"></span><p class="text-white">CAM 02 - PATIO</p></div></div>
+                    <div class="col-md-4"><div class="cam-feed"><span class="rec-dot"></span><p class="text-white">CAM 03 - POZOS</p></div></div>
+                </div>
+            </div>
+
+            <div id="sec-seguridad" class="seccion-contenido d-none">
+                <h3 class="fw-bold"><i class="bi bi-shield-check text-success"></i> Bitácora de Acceso</h3>
+                <div class="card card-dash p-4 bg-white mt-3">
+                    <table class="table table-striped">
+                        <thead><tr><th>Hora</th><th>Evento</th><th>Estado</th></tr></thead>
+                        <tbody>
+                            <tr><td>07:00 AM</td><td>Entrada Personal Turno A</td><td>OK</td></tr>
+                            <tr><td>09:30 AM</td><td>Salida Vehículo Carga</td><td>OK</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="sec-admin" class="seccion-contenido d-none">
+                <h3 class="fw-bold">Gerencia General</h3>
+                <div class="row mt-3">
+                    <div class="col-md-4"><div class="card p-3 bg-primary text-white"><h3>15</h3><small>Empleados</small></div></div>
+                    <div class="col-md-4"><div class="card p-3 bg-success text-white"><h3>98%</h3><small>Producción</small></div></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalPozo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white"><h5>Nuevo Pozo</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <form id="form-pozo">
+                        <div class="mb-2"><label class="small fw-bold">NOMBRE</label><input type="text" id="reg-nombre" class="form-control"></div>
+                        <div class="mb-2"><label class="small fw-bold">UBICACIÓN / SECTOR</label><input type="text" id="reg-ubicacion" class="form-control"></div>
+                        <div class="row">
+                            <div class="col-6 mb-2"><label class="small fw-bold">BARRILES (BPD)</label><input type="number" step="0.01" id="reg-barriles" class="form-control"></div>
+                            <div class="col-6 mb-2"><label class="small fw-bold">PROFUNDIDAD (m)</label><input type="number" step="0.01" id="reg-profundidad" class="form-control"></div>
+                        </div>
+                        <div class="form-check form-switch mt-3">
+                            <input class="form-check-input" type="checkbox" id="reg-activo" checked>
+                            <label class="form-check-label">Operativo</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer"><button type="button" onclick="guardarPozo()" class="btn btn-danger">Guardar</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const API = '/api';
+
+        window.onload = () => { if(localStorage.getItem('token')) mostrarSistema(); };
+
+        // --- LOGIN ---
+        async function login() {
+            const u = document.getElementById('input-user').value;
+            const p = document.getElementById('input-pass').value;
+            try {
+                const res = await fetch(`${API}/token/`, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({username:u, password:p})
+                });
+                if(res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('token', data.access);
+                    localStorage.setItem('user', JSON.stringify(data));
+                    mostrarSistema();
+                } else { document.getElementById('msg-error').innerText = "Credenciales incorrectas"; }
+            } catch(e) { alert("Error de conexión"); }
+        }
+
+        // --- LOGICA DE MENÚ Y SISTEMA ---
+        function mostrarSistema() {
+            document.getElementById('vista-login').classList.remove('d-flex');
+            document.getElementById('vista-login').classList.add('d-none');
+            document.getElementById('vista-sistema').classList.remove('d-none');
+
+            const user = JSON.parse(localStorage.getItem('user'));
+            const cargo = user.cargo || "SIN_CARGO";
+            document.getElementById('menu-user').innerText = user.user_name;
+            document.getElementById('menu-cargo').innerText = cargo;
+
+            const menu = document.getElementById('menu-items');
+            menu.innerHTML = ''; 
+
+            // 1. TÉCNICO
+            if (['TECNICO', 'ADMIN'].includes(cargo)) {
+                menu.innerHTML += `
+                    <a class="nav-link" onclick="cambiarSeccion('sec-pozos', this)"><i class="bi bi-fuel-pump"></i> Pozos</a>
+                    <a class="nav-link" onclick="cambiarSeccion('sec-mantenimiento', this)"><i class="bi bi-tools"></i> Mantenimiento</a>
+                `;
+            }
+            // 2. SEGURIDAD
+            if (['SEGURIDAD', 'ADMIN'].includes(cargo)) {
+                menu.innerHTML += `
+                    <a class="nav-link" onclick="cambiarSeccion('sec-camaras', this)"><i class="bi bi-camera-video"></i> Cámaras</a>
+                    <a class="nav-link" onclick="cambiarSeccion('sec-seguridad', this)"><i class="bi bi-shield-check"></i> Bitácora</a>
+                `;
+            }
+            // 3. ADMIN
+            if (cargo === 'ADMIN') {
+                menu.innerHTML += `<a class="nav-link" onclick="cambiarSeccion('sec-admin', this)"><i class="bi bi-briefcase-fill"></i> Gerencia</a>`;
+            }
+        }
+
+        function cambiarSeccion(id, el) {
+            document.querySelectorAll('.seccion-contenido').forEach(d => d.classList.add('d-none'));
+            document.getElementById(id).classList.remove('d-none');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            if(el) el.classList.add('active');
+            if(id === 'sec-pozos') cargarPozos();
+        }
+
+        // --- CARGAR POZOS (VERSIÓN INTELIGENTE) ---
+        async function cargarPozos() {
+            const res = await fetch(`${API}/petrolera/pozos/`, {
+                headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+            });
+            const grid = document.getElementById('grid-pozos');
+
+            if(res.ok) {
+                const data = await res.json();
+                if(data.length === 0) {
+                    grid.innerHTML = '<div class="col-12 text-center p-5">No hay registros</div>';
+                    return;
+                }
+                
+                grid.innerHTML = data.map(p => {
+                    // AQUÍ ESTÁ EL TRUCO: Busca todos los nombres posibles
+                    const ubicacionReal = p.ubicacion || p.direccion || p.sector || p.zona || p.localizacion || "Sin datos";
+                    
+                    let estaActivo = false;
+                    // Verifica todos los booleanos posibles
+                    if (p.activo !== undefined) estaActivo = p.activo;
+                    else if (p.operativo !== undefined) estaActivo = p.operativo;
+                    else if (p.is_active !== undefined) estaActivo = p.is_active;
+                    else if (p.status !== undefined) estaActivo = p.status;
+
+                    return `
+                    <div class="col-md-4">
+                        <div class="card card-dash bg-white p-3 h-100 shadow-sm border-0">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <h5 class="fw-bold text-dark m-0">${p.nombre}</h5>
+                                <button onclick="eliminarPozo(${p.id})" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></button>
+                            </div>
+                            <p class="small text-muted mb-3 mt-1"><i class="bi bi-geo-alt"></i> ${ubicacionReal}</p>
+                            
+                            <span class="badge ${estaActivo ? 'bg-success' : 'bg-danger'}">
+                                ${estaActivo ? 'OPERATIVO' : 'INACTIVO'}
+                            </span>
+
+                            <div class="row text-center border-top pt-3 mt-2">
+                                <div class="col-6"><strong>${p.barriles_diarios || 0}</strong><br><small>BPD</small></div>
+                                <div class="col-6"><strong>${p.profundidad_metros || 0}</strong><br><small>Metros</small></div>
+                            </div>
+                        </div>
+                    </div>
+                `}).join('');
+            } else {
+                grid.innerHTML = `<div class="alert alert-danger">Error de permisos o servidor</div>`;
+            }
+        }
+
+        // --- GUARDAR POZO (VERSIÓN REDUNDANTE) ---
+        async function guardarPozo() {
+            // Enviamos los datos duplicados con nombres distintos para asegurar que la base de datos los agarre
+            const ubiValue = document.getElementById('reg-ubicacion').value;
+            const actValue = document.getElementById('reg-activo').checked;
+
+            const data = {
+                nombre: document.getElementById('reg-nombre').value,
+                barriles_diarios: document.getElementById('reg-barriles').value,
+                profundidad_metros: document.getElementById('reg-profundidad').value,
+                
+                // Enviamos UBICACIÓN con 3 nombres distintos
+                ubicacion: ubiValue,
+                direccion: ubiValue,
+                sector: ubiValue,
+
+                // Enviamos ESTADO con 3 nombres distintos
+                activo: actValue,
+                operativo: actValue,
+                is_active: actValue,
+                status: actValue
+            };
+            
+            const res = await fetch(`${API}/petrolera/pozos/`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}`},
+                body: JSON.stringify(data)
+            });
+
+            if(res.ok) {
+                bootstrap.Modal.getInstance(document.getElementById('modalPozo')).hide();
+                document.getElementById('form-pozo').reset();
+                cargarPozos();
+                alert("✅ Pozo guardado exitosamente");
+            } else {
+                const e = await res.json();
+                alert("❌ Error: " + JSON.stringify(e));
+            }
+        }
+
+        // --- ELIMINAR POZO ---
+        async function eliminarPozo(id) {
+            if(!confirm("¿Borrar este pozo?")) return;
+            const res = await fetch(`${API}/petrolera/pozos/${id}/`, {
+                method: 'DELETE',
+                headers: {'Authorization': `Bearer ${localStorage.getItem('token')}`}
+            });
+            if(res.ok) { cargarPozos(); } 
+            else { alert("Error al eliminar (Verifique permisos)"); }
+        }
+
+        function logout() { localStorage.clear(); location.reload(); }
+    </script>
+</body>
+</html>
